@@ -1,0 +1,1353 @@
+"<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Resume Builder</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+    <style>
+        /* Custom CSS */
+        .resume-container {
+            max-width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .preview-container {
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .form-container {
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        #skillsList span {
+            margin-right: 10px;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+        
+        .template {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .template:hover {
+            transform: scale(1.05);
+        }
+        
+        .template.selected {
+            border: 3px solid #3B82F6;
+        }
+        
+        .multiselect-dropdown {
+            position: relative;
+            width: 100%;
+        }
+        
+        .dropdown-list {
+            display: none;
+            position: absolute;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 10;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 0.25rem;
+        }
+        
+        .dropdown-list.show {
+            display: block;
+        }
+        
+        .search-bar {
+            position: relative;
+        }
+        
+        .search-suggestions {
+            position: absolute;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 10;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 0.25rem;
+            display: none;
+        }
+        
+        .search-suggestions.show {
+            display: block;
+        }
+        
+        /* Template styles */
+        .template1 .resume-header {
+            background-color: #2563EB;
+            color: white;
+        }
+        
+        .template2 .resume-header {
+            border-bottom: 3px solid #2563EB;
+        }
+        
+        .template3 .resume-header {
+            background-color: #1F2937;
+            color: white;
+        }
+        
+        .template4 .resume-side {
+            background-color: #F3F4F6;
+        }
+        
+        .template5 .section-title {
+            border-bottom: 2px solid #2563EB;
+        }
+        
+        .template6 .resume-header {
+            background-color: #4B5563;
+            color: white;
+        }
+        
+        .experience-entry, .education-entry {
+            position: relative;
+        }
+        
+        .add-experience, .add-education {
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+        
+        /* Tooltip styles */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Improved contrast for input fields */
+        input, select, textarea {
+            color: #111827 !important; /* darker text for better contrast */
+            font-weight: 500 !important;
+        }
+        
+        input::placeholder, select::placeholder, textarea::placeholder {
+            color: #9CA3AF !important; /* lighter placeholder text */
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            border-color: #3B82F6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3) !important;
+        }
+        
+        /* Print styles for PDF export */
+        @media print {
+            body {
+                width: 210mm;
+                height: auto;
+            }
+            
+            .resume-container {
+                box-shadow: none;
+                margin: 0;
+                width: 100%;
+            }
+            
+            .form-container, .template-selector, .hide-on-print {
+                display: none !important;
+            }
+            
+            .preview-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-gray-800">Professional Resume Builder</h1>
+            <p class="text-gray-600">Create your professional resume in minutes</p>
+        </header>
+        
+        <main class="flex flex-col lg:flex-row gap-6">
+            <!-- Form Section -->
+            <div class="form-container w-full lg:w-1/2 bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Personal Information</h2>
+                
+                <!-- Template Selector -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Choose Template</label>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="template template1 rounded overflow-hidden shadow-sm p-1 selected" data-template="template1">
+                            <div class="h-20 bg-blue-600"></div>
+                            <div class="h-6 bg-white mt-1"></div>
+                            <div class="h-4 bg-gray-200 mt-1 mx-1"></div>
+                            <div class="h-4 bg-gray-200 mt-1 mx-1"></div>
+                        </div>
+                        <div class="template template2 rounded overflow-hidden shadow-sm p-1" data-template="template2">
+                            <div class="h-16 bg-white border-b-4 border-blue-600"></div>
+                            <div class="h-6 bg-white mt-1"></div>
+                            <div class="h-4 bg-gray-200 mt-1 mx-1"></div>
+                            <div class="h-4 bg-gray-200 mt-1 mx-1"></div>
+                        </div>
+                        <div class="template template3 rounded overflow-hidden shadow-sm p-1" data-template="template3">
+                            <div class="h-20 bg-gray-800"></div>
+                            <div class="h-6 bg-white mt-1"></div>
+                            <div class="h-4 bg-gray-200 mt-1 mx-1"></div>
+                            <div class="h-4 bg-gray-200 mt-1 mx-1"></div>
+                        </div>
+                        <div class="template template4 rounded overflow-hidden shadow-sm p-1" data-template="template4">
+                            <div class="flex h-20">
+                                <div class="w-1/3 bg-gray-200"></div>
+                                <div class="w-2/3 bg-white"></div>
+                            </div>
+                            <div class="h-6 bg-white mt-1"></div>
+                            <div class="h-4 bg-gray-200 mt-1 mx-1"></div>
+                        </div>
+                        <div class="template template5 rounded overflow-hidden shadow-sm p-1" data-template="template5">
+                            <div class="h-16 bg-white"></div>
+                            <div class="h-6 bg-white border-b-2 border-blue-600 mt-1"></div>
+                            <div class="h-4 bg-gray-200 mt-1 mx-1"></div>
+                            <div class="h-4 bg-gray-200 mt-1 mx-1"></div>
+                        </div>
+                        <div class="template template6 rounded overflow-hidden shadow-sm p-1" data-template="template6">
+                            <div class="h-20 bg-gray-600"></div>
+                            <div class="h-6 bg-white mt-1"></div>
+                            <div class="h-4 bg-gray-200 mt-1 mx-1"></div>
+                            <div class="h-4 bg-gray-200 mt-1 mx-1"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Basic Info -->
+                <div class="mb-4">
+                    <label for="fullName" class="block text-gray-700 text-sm font-bold mb-2">Full Name</label>
+                    <input type="text" id="fullName" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="John Doe">
+                </div>
+                
+                <div class="mb-4">
+                    <label for="professionalTitle" class="block text-gray-700 text-sm font-bold mb-2">Professional Title</label>
+                    <div class="relative">
+                        <select id="professionalTitle" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                            <option value="" disabled selected>Select or type...</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="email" class="block text-gray-700 text-sm font-bold mb-2">Email</label>
+                    <input type="email" id="email" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="johndoe@example.com">
+                </div>
+                
+                <div class="mb-4">
+                    <label for="phone" class="block text-gray-700 text-sm font-bold mb-2">Phone</label>
+                    <input type="tel" id="phone" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="(123) 456-7890">
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="block text-gray-700 text-sm font-bold mb-2">Address</h3>
+                    
+                    <div class="mb-2">
+                        <label for="country" class="block text-gray-700 text-sm mb-2">Country</label>
+                        <input type="text" id="country" value="India" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" readonly>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <label for="state" class="block text-gray-700 text-sm mb-2">State/Province</label>
+                        <select id="state" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                            <option value="" disabled selected>Select state...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <label for="city" class="block text-gray-700 text-sm mb-2">City/District</label>
+                        <select id="city" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                            <option value="" disabled selected>Select city...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <label for="streetAddress" class="block text-gray-700 text-sm mb-2">Street Address</label>
+                        <input type="text" id="streetAddress" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="123 Main St, Apt 4B">
+                    </div>
+                </div>
+                
+                <!-- Professional Summary -->
+                <div class="mb-6">
+                    <h2 class="text-xl font-semibold mb-4">Professional Summary</h2>
+                    <div class="mb-4">
+                        <label for="summary" class="block text-gray-700 text-sm font-bold mb-2">
+                            Summary
+                            <span class="tooltip ml-1 text-blue-500">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltiptext">4-6 sentences highlighting your expertise and achievements</span>
+                            </span>
+                        </label>
+                        <textarea id="summary" rows="4" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="A brief overview of your professional background, skills, and career goals."></textarea>
+                        <div id="summaryOptions" class="mt-2 hidden">
+                            <p class="text-sm font-bold text-gray-700">Suggestions:</p>
+                            <div id="summarySuggestions" class="flex flex-col gap-2 mt-1"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Work Experience -->
+                <div class="mb-6">
+                    <h2 class="text-xl font-semibold mb-4">Work Experience</h2>
+                    <div id="experienceContainer">
+                        <div class="experience-entry mb-4 border-b pb-4">
+                            <div class="mb-2">
+                                <label for="positionTitle0" class="block text-gray-700 text-sm font-bold mb-2">Position Title</label>
+                                <input type="text" id="positionTitle0" class="position-title shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Software Engineer">
+                            </div>
+                            
+                            <div class="mb-2">
+                                <label for="company0" class="block text-gray-700 text-sm font-bold mb-2">Company</label>
+                                <input type="text" id="company0" class="company shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Company Name">
+                                <div class="company-suggestions search-suggestions"></div>
+                            </div>
+                            
+                            <div class="flex gap-4">
+                                <div class="mb-2 w-1/2">
+                                    <label for="startDate0" class="block text-gray-700 text-sm font-bold mb-2">Start Date</label>
+                                    <input type="month" id="startDate0" class="start-date shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                </div>
+                                
+                                <div class="mb-2 w-1/2">
+                                    <label for="endDate0" class="block text-gray-700 text-sm font-bold mb-2">End Date</label>
+                                    <input type="month" id="endDate0" class="end-date shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                    <div class="mt-1">
+                                        <input type="checkbox" id="currentJob0" class="current-job mr-2">
+                                        <label for="currentJob0" class="text-gray-700 text-sm">Current Position</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <label for="jobDescription0" class="block text-gray-700 text-sm font-bold mb-2">Description</label>
+                                <textarea id="jobDescription0" rows="3" class="job-description shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Description of responsibilities and achievements."></textarea>
+                            </div>
+                            
+                            <button type="button" class="add-experience text-blue-500 hover:text-blue-700">
+                                <i class="fas fa-plus-circle"></i> Add Experience
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Education -->
+                <div class="mb-6">
+                    <h2 class="text-xl font-semibold mb-4">Education</h2>
+                    <div id="educationContainer">
+                        <div class="education-entry mb-4 border-b pb-4">
+                            <div class="mb-2">
+                                <label for="degree0" class="block text-gray-700 text-sm font-bold mb-2">Degree</label>
+                                <select id="degree0" class="degree shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                    <option value="" disabled selected>Select degree...</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <label for="institution0" class="block text-gray-700 text-sm font-bold mb-2">Institution</label>
+                                <input type="text" id="institution0" class="institution shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="University Name">
+                                <div class="institution-suggestions search-suggestions"></div>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <label for="graduationYear0" class="block text-gray-700 text-sm font-bold mb-2">Graduation Year</label>
+                                <input type="number" id="graduationYear0" class="graduation-year shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" min="1950" max="2030" placeholder="2023">
+                            </div>
+                            
+                            <button type="button" class="add-education text-blue-500 hover:text-blue-700">
+                                <i class="fas fa-plus-circle"></i> Add Education
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Skills -->
+                <div class="mb-6">
+                    <h2 class="text-xl font-semibold mb-4">Skills</h2>
+                    <div class="mb-4">
+                        <label for="skills" class="block text-gray-700 text-sm font-bold mb-2">Select Skills</label>
+                        <div class="multiselect-dropdown">
+                            <input type="text" id="skillsInput" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Type to search skills...">
+                            <div id="skillsDropdown" class="dropdown-list">
+                                <!-- Skills will be populated here -->
+                            </div>
+                        </div>
+                        <div id="selectedSkills" class="mt-2 flex flex-wrap gap-2">
+                            <!-- Selected skills will be shown here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- PDF Export Button -->
+                <div class="mt-8">
+                    <button id="downloadPdf" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full">
+                        <i class="fas fa-download mr-2"></i> Download as PDF
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Preview Section -->
+            <div class="preview-container w-full lg:w-1/2">
+                <div id="resumePreview" class="resume-container template1 p-8 h-full">
+                    <!-- Resume Header -->
+                    <header class="resume-header p-6 mb-6">
+                        <h1 id="previewName" class="text-3xl font-bold">Your Name</h1>
+                        <p id="previewTitle" class="text-xl">Professional Title</p>
+                        <div class="flex flex-wrap mt-3 text-sm">
+                            <span id="previewEmail" class="mr-4"><i class="fas fa-envelope mr-1"></i> email@example.com</span>
+                            <span id="previewPhone" class="mr-4"><i class="fas fa-phone mr-1"></i> (123) 456-7890</span>
+                            <span id="previewLocation" class="mr-4"><i class="fas fa-map-marker-alt mr-1"></i> City, Country</span>
+                        </div>
+                    </header>
+                    
+                    <!-- Professional Summary -->
+                    <section class="mb-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-3 section-title">Professional Summary</h2>
+                        <p id="previewSummary" class="text-gray-700">A brief overview of your professional background, skills, and career goals will appear here.</p>
+                    </section>
+                    
+                    <!-- Work Experience -->
+                    <section class="mb-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-3 section-title">Work Experience</h2>
+                        <div id="previewExperience" class="space-y-4">
+                            <div class="experience-item">
+                                <div class="flex justify-between items-start">
+                                    <h3 class="text-lg font-semibold">Position Title</h3>
+                                    <span class="text-gray-600 text-sm">Start Date - End Date</span>
+                                </div>
+                                <p class="text-gray-600 italic">Company Name</p>
+                                <p class="text-gray-700 mt-2">Description of responsibilities and achievements.</p>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <!-- Education -->
+                    <section class="mb-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-3 section-title">Education</h2>
+                        <div id="previewEducation" class="space-y-4">
+                            <div class="education-item">
+                                <div class="flex justify-between items-start">
+                                    <h3 class="text-lg font-semibold">Degree</h3>
+                                    <span class="text-gray-600 text-sm">Graduation Year</span>
+                                </div>
+                                <p class="text-gray-600 italic">Institution Name</p>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <!-- Skills -->
+                    <section>
+                        <h2 class="text-xl font-bold text-gray-800 mb-3 section-title">Skills</h2>
+                        <div id="previewSkills" class="flex flex-wrap gap-2">
+                            <span class="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700">Skill 1</span>
+                            <span class="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700">Skill 2</span>
+                            <span class="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700">Skill 3</span>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        // Data - Professional Titles
+        const professionalTitles = [
+            "Software Engineer", "Data Scientist", "Product Manager", "Project Manager", "UX Designer",
+            "UI Developer", "Full Stack Developer", "Frontend Developer", "Backend Developer", "DevOps Engineer",
+            "Systems Administrator", "Network Engineer", "Database Administrator", "IT Support Specialist",
+            "Cyber Security Analyst", "Machine Learning Engineer", "AI Researcher", "Business Analyst",
+            "Marketing Manager", "Digital Marketing Specialist", "Content Writer", "SEO Specialist",
+            "Sales Manager", "Account Executive", "Customer Success Manager", "Human Resources Manager",
+            "Recruitment Specialist", "Operations Manager", "Finance Manager", "Accountant", "Financial Analyst",
+            "Investment Banker", "Teacher", "Professor", "Research Scientist", "Medical Doctor", "Nurse",
+            "Pharmacist", "Dentist", "Lawyer", "Legal Counsel", "Architect", "Interior Designer", "Civil Engineer",
+            "Mechanical Engineer", "Electrical Engineer", "Chemical Engineer", "Graphic Designer", "Video Editor",
+            "Photographer", "Journalist", "Public Relations Specialist", "Event Manager", "Chef", "Hotel Manager",
+            "Customer Care Support" // Added Customer Care Support job role
+        ];
+        
+        // Indian States and Cities
+        const indianStates = {
+            "Andhra Pradesh": ["Visakhapatnam", "Vijayawada", "Guntur", "Tirupati", "Nellore", "Kurnool", "Rajahmundry", "Kakinada"],
+            "Arunachal Pradesh": ["Itanagar", "Naharlagun", "Pasighat", "Tawang", "Ziro", "Bomdila"],
+            "Assam": ["Guwahati", "Silchar", "Dibrugarh", "Jorhat", "Nagaon", "Tinsukia", "Tezpur"],
+            "Bihar": ["Patna", "Gaya", "Muzaffarpur", "Bhagalpur", "Darbhanga", "Purnia", "Arrah", "Bihar Sharif"],
+            "Chhattisgarh": ["Raipur", "Bhilai", "Bilaspur", "Korba", "Durg", "Rajnandgaon", "Jagdalpur"],
+            "Goa": ["Panaji", "Margao", "Vasco da Gama", "Mapusa", "Ponda"],
+            "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar", "Gandhinagar", "Junagadh"],
+            "Haryana": ["Faridabad", "Gurugram", "Panipat", "Ambala", "Yamunanagar", "Rohtak", "Hisar", "Karnal"],
+            "Himachal Pradesh": ["Shimla", "Dharamshala", "Manali", "Solan", "Kullu", "Mandi", "Nahan"],
+            "Jharkhand": ["Ranchi", "Jamshedpur", "Dhanbad", "Bokaro", "Hazaribagh", "Deoghar", "Giridih"],
+            "Karnataka": ["Bengaluru", "Mysuru", "Hubballi-Dharwad", "Mangaluru", "Belagavi", "Kalaburagi", "Davanagere"],
+            "Kerala": ["Thiruvananthapuram", "Kochi", "Kozhikode", "Thrissur", "Kollam", "Palakkad", "Alappuzha", "Kannur"],
+            "Madhya Pradesh": ["Bhopal", "Indore", "Jabalpur", "Gwalior", "Ujjain", "Sagar", "Dewas", "Satna"],
+            "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Thane", "Nashik", "Aurangabad", "Solapur", "Kolhapur"],
+            "Manipur": ["Imphal", "Thoubal", "Bishnupur", "Ukhrul", "Churachandpur", "Senapati"],
+            "Meghalaya": ["Shillong", "Tura", "Jowai", "Nongstoin", "Baghmara"],
+            "Mizoram": ["Aizawl", "Lunglei", "Champhai", "Serchhip", "Kolasib"],
+            "Nagaland": ["Kohima", "Dimapur", "Mokokchung", "Tuensang", "Wokha", "Zunheboto"],
+            "Odisha": ["Bhubaneswar", "Cuttack", "Rourkela", "Berhampur", "Sambalpur", "Puri", "Balasore"],
+            "Punjab": ["Ludhiana", "Amritsar", "Jalandhar", "Patiala", "Bathinda", "Mohali", "Pathankot"],
+            "Rajasthan": ["Jaipur", "Jodhpur", "Udaipur", "Kota", "Bikaner", "Ajmer", "Bhilwara", "Alwar"],
+            "Sikkim": ["Gangtok", "Namchi", "Pelling", "Mangan", "Ravangla"],
+            "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Salem", "Tirunelveli", "Vellore", "Erode"],
+            "Telangana": ["Hyderabad", "Warangal", "Nizamabad", "Karimnagar", "Khammam", "Ramagundam", "Secunderabad"],
+            "Tripura": ["Agartala", "Udaipur", "Dharmanagar", "Kailashahar", "Belonia"],
+            "Uttar Pradesh": ["Lucknow", "Kanpur", "Ghaziabad", "Agra", "Varanasi", "Meerut", "Prayagraj", "Noida"],
+            "Uttarakhand": ["Dehradun", "Haridwar", "Rishikesh", "Nainital", "Mussoorie", "Haldwani", "Roorkee"],
+            "West Bengal": ["Kolkata", "Howrah", "Durgapur", "Asansol", "Siliguri", "Baharampur", "Kalyani"],
+            "Delhi": ["New Delhi", "Delhi", "Noida", "Gurgaon", "Faridabad", "Ghaziabad"],
+            "Jammu and Kashmir": ["Srinagar", "Jammu", "Anantnag", "Baramulla", "Kathua", "Udhampur"],
+            "Ladakh": ["Leh", "Kargil"],
+            "Puducherry": ["Puducherry", "Karaikal", "Mahe", "Yanam"],
+            "Andaman and Nicobar Islands": ["Port Blair", "Havelock Island", "Neil Island"],
+            "Chandigarh": ["Chandigarh"],
+            "Dadra and Nagar Haveli and Daman and Diu": ["Silvassa", "Daman", "Diu"],
+            "Lakshadweep": ["Kavaratti", "Minicoy", "Andrott"]
+        };
+        
+        // Universities
+        const universities = [
+            "Indian Institute of Technology, Delhi", "Indian Institute of Technology, Bombay", "Indian Institute of Technology, Madras",
+            "Indian Institute of Technology, Kanpur", "Indian Institute of Technology, Kharagpur", "Indian Institute of Technology, Roorkee",
+            "Indian Institute of Technology, Guwahati", "Indian Institute of Science, Bangalore", "Jawaharlal Nehru University, Delhi",
+            "Delhi University", "Banaras Hindu University", "Aligarh Muslim University", "Jamia Millia Islamia",
+            "Anna University", "University of Calcutta", "University of Mumbai", "University of Hyderabad",
+            "Jadavpur University", "Punjab University", "Osmania University", "Madras University",
+            "Birla Institute of Technology and Science, Pilani", "National Institute of Technology, Tiruchirappalli",
+            "National Institute of Technology, Warangal", "National Institute of Technology, Surathkal",
+            "Xavier Labour Relations Institute, Jamshedpur", "Indian Institute of Management, Ahmedabad",
+            "Indian Institute of Management, Bangalore", "Indian Institute of Management, Calcutta",
+            "Indian Institute of Management, Lucknow", "Tata Institute of Social Sciences, Mumbai",
+            "All India Institute of Medical Sciences, New Delhi", "Christian Medical College, Vellore",
+            "National Law School of India University, Bangalore", "Vellore Institute of Technology",
+            "Manipal Academy of Higher Education", "Savitribai Phule Pune University", "SRM Institute of Science and Technology",
+            "Amity University", "Thapar Institute of Engineering and Technology", "Symbiosis International University"
+        ];
+        
+        // Companies
+        const companies = [
+            "Tata Consultancy Services", "Infosys", "Wipro", "HCL Technologies", "Tech Mahindra", "Cognizant",
+            "Reliance Industries", "HDFC Bank", "ICICI Bank", "State Bank of India", "Axis Bank", "Bharti Airtel",
+            "ITC Limited", "Hindustan Unilever", "Larsen & Toubro", "Mahindra & Mahindra", "Maruti Suzuki",
+            "Bajaj Auto", "Hero MotoCorp", "Bharat Petroleum", "Indian Oil Corporation", "Adani Group",
+            "JSW Steel", "Tata Steel", "Hindalco Industries", "Vedanta", "NTPC", "Power Grid Corporation",
+            "Bharat Electronics", "Zee Entertainment", "Sun Pharmaceutical", "Dr. Reddy's Laboratories",
+            "Cipla", "Biocon", "Lupin", "MindTree", "Mphasis", "Hexaware Technologies", "LTI",
+            "Persistent Systems", "Oracle India", "Microsoft India", "Google India", "Amazon India",
+            "Flipkart", "Paytm", "Zomato", "Swiggy", "Ola", "Byju's", "Freshworks", "Zoho"
+        ];
+        
+        // Skills
+        const skills = [
+            "JavaScript", "Python", "Java", "C++", "C#", "Ruby", "PHP", "Swift", "Kotlin", "Go",
+            "SQL", "MongoDB", "PostgreSQL", "MySQL", "Oracle", "React", "Angular", "Vue.js", "Next.js",
+            "Node.js", "Express.js", "Django", "Flask", "Spring Boot", "ASP.NET", "Laravel", "Ruby on Rails",
+            "HTML", "CSS", "Sass", "TypeScript", "Git", "Docker", "Kubernetes", "AWS", "Azure", "GCP",
+            "DevOps", "CI/CD", "Jenkins", "Terraform", "Linux", "Windows Server", "Machine Learning",
+            "Deep Learning", "TensorFlow", "PyTorch", "Data Analysis", "Data Visualization", "Power BI",
+            "Tableau", "Excel", "Word", "PowerPoint", "Photoshop", "Illustrator", "Figma", "Adobe XD",
+            "SEO", "SEM", "Content Marketing", "Social Media Marketing", "Email Marketing", "Project Management",
+            "Agile", "Scrum", "Kanban", "Jira", "Confluence", "Slack", "Communication", "Leadership",
+            "Team Management", "Problem Solving", "Critical Thinking", "Time Management", "Customer Service",
+            "Conflict Resolution", "Active Listening", "Empathy", "Patience", "Call Center Operations",
+            "CRM Software", "Ticketing Systems", "Help Desk Support", "Technical Troubleshooting"
+        ];
+        
+        // Degrees
+        const degrees = [
+            "Bachelor of Technology (B.Tech)", "Bachelor of Engineering (BE)", "Bachelor of Science (B.Sc)",
+            "Bachelor of Arts (BA)", "Bachelor of Commerce (B.Com)", "Bachelor of Business Administration (BBA)",
+            "Bachelor of Computer Applications (BCA)", "Master of Technology (M.Tech)", "Master of Engineering (ME)",
+            "Master of Science (M.Sc)", "Master of Arts (MA)", "Master of Commerce (M.Com)",
+            "Master of Business Administration (MBA)", "Master of Computer Applications (MCA)",
+            "Doctor of Philosophy (PhD)", "Master of Philosophy (M.Phil)", "Bachelor of Medicine, Bachelor of Surgery (MBBS)",
+            "Bachelor of Dental Surgery (BDS)", "Bachelor of Laws (LLB)", "Master of Laws (LLM)",
+            "Bachelor of Architecture (B.Arch)", "Bachelor of Design (B.Des)", "Master of Design (M.Des)",
+            "Bachelor of Pharmacy (B.Pharm)", "Master of Pharmacy (M.Pharm)", "Bachelor of Education (B.Ed)",
+            "Master of Education (M.Ed)", "Chartered Accountant (CA)", "Company Secretary (CS)",
+            "Cost and Management Accountant (CMA)"
+        ];
+        
+        // Professional summary templates based on profession
+        const summaryTemplates = {
+            "Software Engineer": [
+                "Experienced Software Engineer with expertise in developing scalable applications using modern technologies. Proven track record of delivering high-quality code, optimizing application performance, and collaborating with cross-functional teams. Passionate about solving complex problems and staying updated with the latest industry trends.",
+                "Results-driven Software Engineer with a strong foundation in software development principles and best practices. Skilled in designing and implementing efficient solutions that meet business requirements. Adept at working in Agile environments, collaborating with stakeholders, and mentoring junior developers.",
+                "Innovative Software Engineer with a passion for creating intuitive and efficient software solutions. Experienced in full-stack development with a focus on user experience and application performance. Strong communicator with the ability to translate complex technical concepts to non-technical stakeholders."
+            ],
+            "Data Scientist": [
+                "Data Scientist with expertise in machine learning, statistical analysis, and data visualization. Skilled in extracting actionable insights from complex datasets and implementing predictive models. Experienced in using Python, R, and various data science libraries to solve business problems and drive decision-making.",
+                "Analytical Data Scientist with a strong background in developing and implementing machine learning models to solve complex business problems. Proficient in data wrangling, exploratory data analysis, and communicating findings to stakeholders. Experienced in using statistical techniques to extract meaningful insights from large datasets.",
+                "Results-oriented Data Scientist with expertise in predictive modeling, data mining, and statistical analysis. Demonstrated success in leveraging data to identify trends, optimize processes, and drive business growth. Strong communicator with the ability to present complex findings in a clear and actionable manner."
+            ],
+            "Product Manager": [
+                "Strategic Product Manager with expertise in product lifecycle management and go-to-market strategies. Skilled in gathering and prioritizing product requirements, defining product vision, and working with cross-functional teams to deliver high-quality products. Customer-focused with a track record of launching successful products that meet market needs.",
+                "Results-driven Product Manager with experience in developing and executing product strategies that align with business objectives. Adept at conducting market research, competitive analysis, and user interviews to inform product decisions. Strong communicator with the ability to collaborate effectively with engineering, design, and marketing teams.",
+                "Innovative Product Manager with a passion for creating products that solve real-world problems. Experienced in Agile methodologies, user story creation, and feature prioritization. Demonstrated success in leading cross-functional teams to deliver products that exceed customer expectations and drive business growth."
+            ],
+            "Customer Care Support": [
+                "Dedicated Customer Care Support professional with extensive experience in resolving customer inquiries and providing exceptional service. Skilled in active listening, problem-solving, and de-escalating challenging situations. Consistently maintains high customer satisfaction ratings while efficiently managing multiple cases and prioritizing urgent matters.",
+                "Customer-focused support specialist with a proven track record of delivering personalized assistance and technical solutions. Adept at navigating CRM systems, documenting interactions, and following up to ensure complete customer satisfaction. Strong communicator who builds rapport quickly and turns negative experiences into positive outcomes.",
+                "Results-oriented Customer Care Support representative with expertise in troubleshooting issues and identifying optimal solutions. Experienced in managing high call volumes while maintaining quality and attention to detail. Committed to continuous improvement and staying updated on product knowledge to provide accurate and helpful assistance."
+            ]
+        };
+        
+        // Default summary for professions not in the templates
+        const defaultSummary = [
+            "Experienced professional with a strong background in the industry and a proven track record of success. Skilled in collaborating with cross-functional teams, managing complex projects, and driving business results. Passionate about continuous learning and staying updated with the latest trends and best practices.",
+            "Results-oriented professional with expertise in the field and a commitment to excellence. Demonstrated ability to identify opportunities, solve complex problems, and implement effective solutions. Strong communicator with a talent for building relationships and working effectively with diverse stakeholders.",
+            "Dedicated professional with comprehensive knowledge and practical experience in the industry. Adept at analyzing requirements, developing strategies, and executing plans to achieve objectives. Known for attention to detail, adaptability, and the ability to thrive in fast-paced environments."
+        ];
+        
+        // DOM references
+        const fullNameInput = document.getElementById('fullName');
+        const professionalTitleSelect = document.getElementById('professionalTitle');
+        const emailInput = document.getElementById('email');
+        const phoneInput = document.getElementById('phone');
+        const stateSelect = document.getElementById('state');
+        const citySelect = document.getElementById('city');
+        const streetAddressInput = document.getElementById('streetAddress');
+        const summaryTextarea = document.getElementById('summary');
+        const summaryOptions = document.getElementById('summaryOptions');
+        const summarySuggestions = document.getElementById('summarySuggestions');
+        const experienceContainer = document.getElementById('experienceContainer');
+        const educationContainer = document.getElementById('educationContainer');
+        const skillsInput = document.getElementById('skillsInput');
+        const skillsDropdown = document.getElementById('skillsDropdown');
+        const selectedSkills = document.getElementById('selectedSkills');
+        const downloadPdfButton = document.getElementById('downloadPdf');
+        const templates = document.querySelectorAll('.template');
+        
+        // Preview elements
+        const previewName = document.getElementById('previewName');
+        const previewTitle = document.getElementById('previewTitle');
+        const previewEmail = document.getElementById('previewEmail');
+        const previewPhone = document.getElementById('previewPhone');
+        const previewLocation = document.getElementById('previewLocation');
+        const previewSummary = document.getElementById('previewSummary');
+        const previewExperience = document.getElementById('previewExperience');
+        const previewEducation = document.getElementById('previewEducation');
+        const previewSkills = document.getElementById('previewSkills');
+        const resumePreview = document.getElementById('resumePreview');
+        
+        // Initialize the form
+        function initializeForm() {
+            // Populate professional titles
+            professionalTitles.forEach(title => {
+                const option = document.createElement('option');
+                option.value = title;
+                option.textContent = title;
+                professionalTitleSelect.appendChild(option);
+            });
+            
+            // Populate states
+            Object.keys(indianStates).forEach(state => {
+                const option = document.createElement('option');
+                option.value = state;
+                option.textContent = state;
+                stateSelect.appendChild(option);
+            });
+            
+            // Populate degrees
+            const degreeSelect = document.getElementById('degree0');
+            degrees.forEach(degree => {
+                const option = document.createElement('option');
+                option.value = degree;
+                option.textContent = degree;
+                degreeSelect.appendChild(option);
+            });
+            
+            // Populate skills dropdown
+            skills.forEach(skill => {
+                const div = document.createElement('div');
+                div.className = 'p-2 hover:bg-gray-100 cursor-pointer';
+                div.textContent = skill;
+                div.onclick = () => {
+                    addSkill(skill);
+                };
+                skillsDropdown.appendChild(div);
+            });
+            
+            // Set up event listeners
+            setupEventListeners();
+        }
+        
+        // Set up event listeners
+        function setupEventListeners() {
+            // Basic info
+            fullNameInput.addEventListener('input', updatePreview);
+            professionalTitleSelect.addEventListener('change', updatePreview);
+            professionalTitleSelect.addEventListener('change', showSummarySuggestions);
+            emailInput.addEventListener('input', updatePreview);
+            phoneInput.addEventListener('input', updatePreview);
+            stateSelect.addEventListener('change', populateCities);
+            citySelect.addEventListener('change', updatePreview);
+            streetAddressInput.addEventListener('input', updatePreview);
+            
+            // Summary
+            summaryTextarea.addEventListener('input', updatePreview);
+            
+            // Skills
+            skillsInput.addEventListener('focus', () => {
+                skillsDropdown.classList.add('show');
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!skillsInput.contains(e.target) && !skillsDropdown.contains(e.target)) {
+                    skillsDropdown.classList.remove('show');
+                }
+            });
+            
+            skillsInput.addEventListener('input', filterSkills);
+            
+            // Download PDF
+            downloadPdfButton.addEventListener('click', generatePDF);
+            
+            // Template selection
+            templates.forEach(template => {
+                template.addEventListener('click', () => {
+                    templates.forEach(t => t.classList.remove('selected'));
+                    template.classList.add('selected');
+                    const templateClass = template.getAttribute('data-template');
+                    
+                    // Remove all template classes from resumePreview
+                    resumePreview.classList.remove('template1', 'template2', 'template3', 'template4', 'template5', 'template6');
+                    
+                    // Add the selected template class
+                    resumePreview.classList.add(templateClass);
+                });
+            });
+            
+            // Add experience and education
+            document.querySelector('.add-experience').addEventListener('click', addExperienceField);
+            document.querySelector('.add-education').addEventListener('click', addEducationField);
+            
+            // Current job checkbox
+            document.getElementById('currentJob0').addEventListener('change', function() {
+                const endDateInput = document.getElementById('endDate0');
+                endDateInput.disabled = this.checked;
+                if (this.checked) {
+                    endDateInput.value = '';
+                }
+                updatePreview();
+            });
+        }
+        
+        // Populate cities based on selected state
+        function populateCities() {
+            const selectedState = stateSelect.value;
+            citySelect.innerHTML = '<option value="" disabled selected>Select city...</option>';
+            
+            if (selectedState && indianStates[selectedState]) {
+                indianStates[selectedState].forEach(city => {
+                    const option = document.createElement('option');
+                    option.value = city;
+                    option.textContent = city;
+                    citySelect.appendChild(option);
+                });
+            }
+            
+            updatePreview();
+        }
+        
+        // Show summary suggestions based on selected profession
+        function showSummarySuggestions() {
+            const profession = professionalTitleSelect.value;
+            summarySuggestions.innerHTML = '';
+            
+            let templates = summaryTemplates[profession] || defaultSummary;
+            
+            if (templates.length > 0) {
+                templates.forEach(template => {
+                    const div = document.createElement('div');
+                    div.className = 'p-2 bg-gray-100 rounded cursor-pointer hover:bg-gray-200';
+                    div.textContent = template;
+                    div.onclick = () => {
+                        summaryTextarea.value = template;
+                        updatePreview();
+                    };
+                    summarySuggestions.appendChild(div);
+                });
+                
+                summaryOptions.classList.remove('hidden');
+            } else {
+                summaryOptions.classList.add('hidden');
+            }
+        }
+        
+        // Filter skills based on input
+        function filterSkills() {
+            const searchText = skillsInput.value.toLowerCase();
+            const skillElements = skillsDropdown.querySelectorAll('div');
+            
+            skillElements.forEach(element => {
+                const skill = element.textContent.toLowerCase();
+                if (skill.includes(searchText)) {
+                    element.style.display = 'block';
+                } else {
+                    element.style.display = 'none';
+                }
+            });
+        }
+        
+        // Add skill to selected skills
+        function addSkill(skill) {
+            const skillExists = Array.from(selectedSkills.children).some(
+                child => child.getAttribute('data-skill') === skill
+            );
+            
+            if (!skillExists) {
+                const span = document.createElement('span');
+                span.className = 'bg-blue-100 text-blue-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded flex items-center';
+                span.setAttribute('data-skill', skill);
+                
+                const text = document.createElement('span');
+                text.textContent = skill;
+                span.appendChild(text);
+                
+                const closeButton = document.createElement('span');
+                closeButton.innerHTML = '&times;';
+                closeButton.className = 'ml-1 cursor-pointer';
+                closeButton.onclick = (e) => {
+                    e.stopPropagation();
+                    span.remove();
+                    updatePreview();
+                };
+                
+                span.appendChild(closeButton);
+                selectedSkills.appendChild(span);
+                
+                skillsInput.value = '';
+                updatePreview();
+            }
+        }
+        
+        // Add new experience field
+        function addExperienceField() {
+            const experienceEntries = document.querySelectorAll('.experience-entry');
+            const newIndex = experienceEntries.length;
+            
+            const newExperience = document.createElement('div');
+            newExperience.className = 'experience-entry mb-4 border-b pb-4';
+            
+            newExperience.innerHTML = `
+                <div class="mb-2">
+                    <label for="positionTitle${newIndex}" class="block text-gray-700 text-sm font-bold mb-2">Position Title</label>
+                    <input type="text" id="positionTitle${newIndex}" class="position-title shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Software Engineer">
+                </div>
+                
+                <div class="mb-2">
+                    <label for="company${newIndex}" class="block text-gray-700 text-sm font-bold mb-2">Company</label>
+                    <input type="text" id="company${newIndex}" class="company shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Company Name">
+                    <div class="company-suggestions search-suggestions"></div>
+                </div>
+                
+                <div class="flex gap-4">
+                    <div class="mb-2 w-1/2">
+                        <label for="startDate${newIndex}" class="block text-gray-700 text-sm font-bold mb-2">Start Date</label>
+                        <input type="month" id="startDate${newIndex}" class="start-date shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+                    
+                    <div class="mb-2 w-1/2">
+                        <label for="endDate${newIndex}" class="block text-gray-700 text-sm font-bold mb-2">End Date</label>
+                        <input type="month" id="endDate${newIndex}" class="end-date shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        <div class="mt-1">
+                            <input type="checkbox" id="currentJob${newIndex}" class="current-job mr-2">
+                            <label for="currentJob${newIndex}" class="text-gray-700 text-sm">Current Position</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-2">
+                    <label for="jobDescription${newIndex}" class="block text-gray-700 text-sm font-bold mb-2">Description</label>
+                    <textarea id="jobDescription${newIndex}" rows="3" class="job-description shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Description of responsibilities and achievements."></textarea>
+                </div>
+                
+                <button type="button" class="remove-experience text-red-500 hover:text-red-700">
+                    <i class="fas fa-minus-circle"></i> Remove Experience
+                </button>
+            `;
+            
+            experienceContainer.appendChild(newExperience);
+            
+            // Add event listeners for company suggestions
+            const companyInput = document.getElementById(`company${newIndex}`);
+            const companySuggestions = newExperience.querySelector('.company-suggestions');
+            
+            companyInput.addEventListener('input', () => {
+                const searchText = companyInput.value.toLowerCase();
+                if (searchText.length > 0) {
+                    const filteredCompanies = companies.filter(company => 
+                        company.toLowerCase().includes(searchText)
+                    ).slice(0, 5);
+                    
+                    companySuggestions.innerHTML = '';
+                    
+                    if (filteredCompanies.length > 0) {
+                        filteredCompanies.forEach(company => {
+                            const div = document.createElement('div');
+                            div.className = 'p-2 hover:bg-gray-100 cursor-pointer';
+                            div.textContent = company;
+                            div.onclick = () => {
+                                companyInput.value = company;
+                                companySuggestions.classList.remove('show');
+                                updatePreview();
+                            };
+                            companySuggestions.appendChild(div);
+                        });
+                        companySuggestions.classList.add('show');
+                    } else {
+                        companySuggestions.classList.remove('show');
+                    }
+                } else {
+                    companySuggestions.classList.remove('show');
+                }
+                updatePreview();
+            });
+            
+            companyInput.addEventListener('focus', () => {
+                if (companyInput.value.length > 0) {
+                    companySuggestions.classList.add('show');
+                }
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!companyInput.contains(e.target) && !companySuggestions.contains(e.target)) {
+                    companySuggestions.classList.remove('show');
+                }
+            });
+            
+            // Add event listeners for new fields
+            document.getElementById(`positionTitle${newIndex}`).addEventListener('input', updatePreview);
+            document.getElementById(`company${newIndex}`).addEventListener('input', updatePreview);
+            document.getElementById(`startDate${newIndex}`).addEventListener('input', updatePreview);
+            document.getElementById(`endDate${newIndex}`).addEventListener('input', updatePreview);
+            document.getElementById(`jobDescription${newIndex}`).addEventListener('input', updatePreview);
+            
+            // Add event listener for current job checkbox
+            document.getElementById(`currentJob${newIndex}`).addEventListener('change', function() {
+                const endDateInput = document.getElementById(`endDate${newIndex}`);
+                endDateInput.disabled = this.checked;
+                if (this.checked) {
+                    endDateInput.value = '';
+                }
+                updatePreview();
+            });
+            
+            // Add event listener for remove button
+            newExperience.querySelector('.remove-experience').addEventListener('click', function() {
+                newExperience.remove();
+                updatePreview();
+            });
+            
+            updatePreview();
+        }
+        
+        // Add new education field
+        function addEducationField() {
+            const educationEntries = document.querySelectorAll('.education-entry');
+            const newIndex = educationEntries.length;
+            
+            const newEducation = document.createElement('div');
+            newEducation.className = 'education-entry mb-4 border-b pb-4';
+            
+            newEducation.innerHTML = `
+                <div class="mb-2">
+                    <label for="degree${newIndex}" class="block text-gray-700 text-sm font-bold mb-2">Degree</label>
+                    <select id="degree${newIndex}" class="degree shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        <option value="" disabled selected>Select degree...</option>
+                    </select>
+                </div>
+                
+                <div class="mb-2">
+                    <label for="institution${newIndex}" class="block text-gray-700 text-sm font-bold mb-2">Institution</label>
+                    <input type="text" id="institution${newIndex}" class="institution shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="University Name">
+                    <div class="institution-suggestions search-suggestions"></div>
+                </div>
+                
+                <div class="mb-2">
+                    <label for="graduationYear${newIndex}" class="block text-gray-700 text-sm font-bold mb-2">Graduation Year</label>
+                    <input type="number" id="graduationYear${newIndex}" class="graduation-year shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" min="1950" max="2030" placeholder="2023">
+                </div>
+                
+                <button type="button" class="remove-education text-red-500 hover:text-red-700">
+                    <i class="fas fa-minus-circle"></i> Remove Education
+                </button>
+            `;
+            
+            educationContainer.appendChild(newEducation);
+            
+            // Populate degrees
+            const degreeSelect = document.getElementById(`degree${newIndex}`);
+            degrees.forEach(degree => {
+                const option = document.createElement('option');
+                option.value = degree;
+                option.textContent = degree;
+                degreeSelect.appendChild(option);
+            });
+            
+            // Add event listeners for institution suggestions
+            const institutionInput = document.getElementById(`institution${newIndex}`);
+            const institutionSuggestions = newEducation.querySelector('.institution-suggestions');
+            
+            institutionInput.addEventListener('input', () => {
+                const searchText = institutionInput.value.toLowerCase();
+                if (searchText.length > 0) {
+                    const filteredInstitutions = universities.filter(institution => 
+                        institution.toLowerCase().includes(searchText)
+                    ).slice(0, 5);
+                    
+                    institutionSuggestions.innerHTML = '';
+                    
+                    if (filteredInstitutions.length > 0) {
+                        filteredInstitutions.forEach(institution => {
+                            const div = document.createElement('div');
+                            div.className = 'p-2 hover:bg-gray-100 cursor-pointer';
+                            div.textContent = institution;
+                            div.onclick = () => {
+                                institutionInput.value = institution;
+                                institutionSuggestions.classList.remove('show');
+                                updatePreview();
+                            };
+                            institutionSuggestions.appendChild(div);
+                        });
+                        institutionSuggestions.classList.add('show');
+                    } else {
+                        institutionSuggestions.classList.remove('show');
+                    }
+                } else {
+                    institutionSuggestions.classList.remove('show');
+                }
+                updatePreview();
+            });
+            
+            institutionInput.addEventListener('focus', () => {
+                if (institutionInput.value.length > 0) {
+                    institutionSuggestions.classList.add('show');
+                }
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!institutionInput.contains(e.target) && !institutionSuggestions.contains(e.target)) {
+                    institutionSuggestions.classList.remove('show');
+                }
+            });
+            
+            // Add event listeners for new fields
+            document.getElementById(`degree${newIndex}`).addEventListener('change', updatePreview);
+            document.getElementById(`institution${newIndex}`).addEventListener('input', updatePreview);
+            document.getElementById(`graduationYear${newIndex}`).addEventListener('input', updatePreview);
+            
+            // Add event listener for remove button
+            newEducation.querySelector('.remove-education').addEventListener('click', function() {
+                newEducation.remove();
+                updatePreview();
+            });
+            
+            updatePreview();
+        }
+        
+        // Update the resume preview
+        function updatePreview() {
+            // Update basic info
+            previewName.textContent = fullNameInput.value || 'Your Name';
+            previewTitle.textContent = professionalTitleSelect.value || 'Professional Title';
+            previewEmail.innerHTML = `<i class="fas fa-envelope mr-1"></i> ${emailInput.value || 'email@example.com'}`;
+            previewPhone.innerHTML = `<i class="fas fa-phone mr-1"></i> ${phoneInput.value || '(123) 456-7890'}`;
+            
+            // Update location
+            const city = citySelect.value || 'City';
+            const country = 'India';
+            previewLocation.innerHTML = `<i class="fas fa-map-marker-alt mr-1"></i> ${city}, ${country}`;
+            
+            // Update summary
+            previewSummary.textContent = summaryTextarea.value || 'A brief overview of your professional background, skills, and career goals will appear here.';
+            
+            // Update experience
+            updateExperiencePreview();
+            
+            // Update education
+            updateEducationPreview();
+            
+            // Update skills
+            updateSkillsPreview();
+        }
+        
+        // Update experience section in preview
+        function updateExperiencePreview() {
+            previewExperience.innerHTML = '';
+            
+            const experienceEntries = document.querySelectorAll('.experience-entry');
+            
+            if (experienceEntries.length === 0) {
+                previewExperience.innerHTML = `
+                    <div class="experience-item">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-lg font-semibold">Position Title</h3>
+                            <span class="text-gray-600 text-sm">Start Date - End Date</span>
+                        </div>
+                        <p class="text-gray-600 italic">Company Name</p>
+                        <p class="text-gray-700 mt-2">Description of responsibilities and achievements.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            experienceEntries.forEach((entry, index) => {
+                const positionTitle = document.getElementById(`positionTitle${index}`).value || 'Position Title';
+                const company = document.getElementById(`company${index}`).value || 'Company Name';
+                const startDate = document.getElementById(`startDate${index}`).value 
+                    ? new Date(document.getElementById(`startDate${index}`).value).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) 
+                    : 'Start Date';
+                
+                let endDate = 'Present';
+                const currentJob = document.getElementById(`currentJob${index}`).checked;
+                
+                if (!currentJob) {
+                    endDate = document.getElementById(`endDate${index}`).value 
+                        ? new Date(document.getElementById(`endDate${index}`).value).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) 
+                        : 'End Date';
+                }
+                
+                const description = document.getElementById(`jobDescription${index}`).value || 'Description of responsibilities and achievements.';
+                
+                const experienceItem = document.createElement('div');
+                experienceItem.className = 'experience-item mb-4';
+                
+                experienceItem.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-lg font-semibold">${positionTitle}</h3>
+                        <span class="text-gray-600 text-sm">${startDate} - ${endDate}</span>
+                    </div>
+                    <p class="text-gray-600 italic">${company}</p>
+                    <p class="text-gray-700 mt-2">${description}</p>
+                `;
+                
+                previewExperience.appendChild(experienceItem);
+            });
+        }
+        
+        // Update education section in preview
+        function updateEducationPreview() {
+            previewEducation.innerHTML = '';
+            
+            const educationEntries = document.querySelectorAll('.education-entry');
+            
+            if (educationEntries.length === 0) {
+                previewEducation.innerHTML = `
+                    <div class="education-item">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-lg font-semibold">Degree</h3>
+                            <span class="text-gray-600 text-sm">Graduation Year</span>
+                        </div>
+                        <p class="text-gray-600 italic">Institution Name</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            educationEntries.forEach((entry, index) => {
+                const degree = document.getElementById(`degree${index}`).value || 'Degree';
+                const institution = document.getElementById(`institution${index}`).value || 'Institution Name';
+                const graduationYear = document.getElementById(`graduationYear${index}`).value || 'Graduation Year';
+                
+                const educationItem = document.createElement('div');
+                educationItem.className = 'education-item mb-4';
+                
+                educationItem.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-lg font-semibold">${degree}</h3>
+                        <span class="text-gray-600 text-sm">${graduationYear}</span>
+                    </div>
+                    <p class="text-gray-600 italic">${institution}</p>
+                `;
+                
+                previewEducation.appendChild(educationItem);
+            });
+        }
+        
+        // Update skills section in preview
+        function updateSkillsPreview() {
+            previewSkills.innerHTML = '';
+            
+            const skillElements = selectedSkills.querySelectorAll('span');
+            
+            if (skillElements.length === 0) {
+                previewSkills.innerHTML = `
+                    <span class="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700">Skill 1</span>
+                    <span class="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700">Skill 2</span>
+                    <span class="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700">Skill 3</span>
+                `;
+                return;
+            }
+            
+            skillElements.forEach(element => {
+                const skill = element.getAttribute('data-skill');
+                const skillSpan = document.createElement('span');
+                skillSpan.className = 'inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2';
+                skillSpan.textContent = skill;
+                previewSkills.appendChild(skillSpan);
+            });
+        }
+        
+        // Generate and download PDF
+        function generatePDF() {
+            const element = document.getElementById('resumePreview');
+            
+            // Configure options
+            const options = {
+                margin: [10, 10],
+                filename: `${fullNameInput.value || 'Resume'}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            // Generate PDF
+            html2pdf().set(options).from(element).save();
+        }
+        
+        // Add event listeners for company suggestions
+        function setupCompanySuggestions() {
+            const companyInput = document.getElementById('company0');
+            const companySuggestions = document.querySelector('.company-suggestions');
+            
+            companyInput.addEventListener('input', () => {
+                const searchText = companyInput.value.toLowerCase();
+                if (searchText.length > 0) {
+                    const filteredCompanies = companies.filter(company => 
+                        company.toLowerCase().includes(searchText)
+                    ).slice(0, 5);
+                    
+                    companySuggestions.innerHTML = '';
+                    
+                    if (filteredCompanies.length > 0) {
+                        filteredCompanies.forEach(company => {
+                            const div = document.createElement('div');
+                            div.className = 'p-2 hover:bg-gray-100 cursor-pointer';
+                            div.textContent = company;
+                            div.onclick = () => {
+                                companyInput.value = company;
+                                companySuggestions.classList.remove('show');
+                                updatePreview();
+                            };
+                            companySuggestions.appendChild(div);
+                        });
+                        companySuggestions.classList.add('show');
+                    } else {
+                        companySuggestions.classList.remove('show');
+                    }
+                } else {
+                    companySuggestions.classList.remove('show');
+                }
+                updatePreview();
+            });
+            
+            companyInput.addEventListener('focus', () => {
+                if (companyInput.value.length > 0) {
+                    companySuggestions.classList.add('show');
+                }
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!companyInput.contains(e.target) && !companySuggestions.contains(e.target)) {
+                    companySuggestions.classList.remove('show');
+                }
+            });
+        }
+        
+        // Add event listeners for institution suggestions
+        function setupInstitutionSuggestions() {
+            const institutionInput = document.getElementById('institution0');
+            const institutionSuggestions = document.querySelector('.institution-suggestions');
+            
+            institutionInput.addEventListener('input', () => {
+                const searchText = institutionInput.value.toLowerCase();
+                if (searchText.length > 0) {
+                    const filteredInstitutions = universities.filter(institution => 
+                        institution.toLowerCase().includes(searchText)
+                    ).slice(0, 5);
+                    
+                    institutionSuggestions.innerHTML = '';
+                    
+                    if (filteredInstitutions.length > 0) {
+                        filteredInstitutions.forEach(institution => {
+                            const div = document.createElement('div');
+                            div.className = 'p-2 hover:bg-gray-100 cursor-pointer';
+                            div.textContent = institution;
+                            div.onclick = () => {
+                                institutionInput.value = institution;
+                                institutionSuggestions.classList.remove('show');
+                                updatePreview();
+                            };
+                            institutionSuggestions.appendChild(div);
+                        });
+                        institutionSuggestions.classList.add('show');
+                    } else {
+                        institutionSuggestions.classList.remove('show');
+                    }
+                } else {
+                    institutionSuggestions.classList.remove('show');
+                }
+                updatePreview();
+            });
+            
+            institutionInput.addEventListener('focus', () => {
+                if (institutionInput.value.length > 0) {
+                    institutionSuggestions.classList.add('show');
+                }
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!institutionInput.contains(e.target) && !institutionSuggestions.contains(e.target)) {
+                    institutionSuggestions.classList.remove('show');
+                }
+            });
+        }
+        
+        // Initialize the application
+        window.onload = function() {
+            initializeForm();
+            setupCompanySuggestions();
+            setupInstitutionSuggestions();
+        };
+    </script>
+</body>
+</html>"
